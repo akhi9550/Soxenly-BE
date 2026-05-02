@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zhooze | Payment Status</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;700&family=JetBrains+Mono:wght@500;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --black: #000000;
+            --white: #ffffff;
+            --success: #28a745;
+        }
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #f5f5f5;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .status-card {
+            background: var(--white);
+            border: 2px solid var(--black);
+            padding: 48px;
+            width: 100%;
+            max-width: 480px;
+            text-align: center;
+        }
+        .header {
+            font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+            font-weight: 800;
+            font-size: 1.4rem;
+            margin-bottom: 30px;
+            letter-spacing: -0.05em;
+        }
+        .status-badge {
+            display: inline-block;
+            background: var(--black);
+            color: var(--white);
+            padding: 10px 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+        }
+        .message {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+        .back-btn {
+            display: inline-block;
+            width: 100%;
+            border: 2px solid var(--black);
+            background: var(--white);
+            color: var(--black);
+            padding: 18px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .back-btn:hover {
+            background: var(--black);
+            color: var(--white);
+        }
+    </style>
+</head>
+<body>
+    <div class="status-card">
+        <div class="header">Payment Status</div>
+        <div class="status-badge" style="background: var(--success);">SUCCESS</div>
+        <p class="message">Your transaction for this order has already been completed successfully.</p>
+        <a href="http://localhost:5173/shop" class="back-btn">Return to Store</a>
+    </div>
+</body>
+</html>

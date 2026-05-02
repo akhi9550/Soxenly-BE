@@ -1,0 +1,340 @@
+package handlers
+
+import (
+	"Zhooze/usecase"
+	"Zhooze/utils/models"
+	"Zhooze/utils/response"
+	"errors"
+	"fmt"
+	"net/http"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+)
+
+// @Summary Approve Order
+// @Description Approve Order from admin side which is in processing state
+// @Tags Admin Order Management
+// @Accept   json
+// @Produce  json
+// @Security Bearer
+// @Param    order_id   query   string   true    "Order ID"
+// @Success 200 {object} response.Response{}
+// @Failure 500 {object} response.Response{}
+// @Router /admin/order/approve [GET]
+func ApproveOrder(c *gin.Context) {
+	orderId, err := strconv.Atoi(c.Query("order_id"))
+	if err != nil {
+		errs := response.ClientResponse(http.StatusInternalServerError, "error from orderID", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errs)
+		return
+	}
+	err = usecase.ApproveOrder(orderId)
+	if err != nil {
+		errs := response.ClientResponse(http.StatusInternalServerError, "Couldn't approve the order", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errs)
+		return
+	}
+	success := response.ClientResponse(http.StatusOK, "Order Approved Successfully", nil, nil)
+	c.JSON(http.StatusOK, success)
+}
+
+// @Summary Cancel Order Admin
+// @Description Cancel Order from admin side
+// @Tags Admin Order Management
+// @Accept   json
+// @Produce  json
+// @Security Bearer
+// @Param order_id query string true "Order ID"
+// @Success 200 {object} response.Response{}
+// @Failure 500 {object} response.Response{}
+// @Router /admin/order/cancel   [GET]
+func CancelOrderFromAdmin(c *gin.Context) {
+	order_id, err := strconv.Atoi(c.Query("order_id"))
+	if err != nil {
+		errs := response.ClientResponse(http.StatusInternalServerError, "error from orderID", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errs)
+		return
+	}
+	err = usecase.CancelOrderFromAdmin(order_id)
+	if err != nil {
+		errs := response.ClientResponse(http.StatusInternalServerError, "Couldn't cancel the order", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errs)
+		return
+	}
+	success := response.ClientResponse(http.StatusOK, "Order Cancel Successfully", nil, nil)
+	c.JSON(http.StatusOK, success)
+}
+
+func ShipOrder(c *gin.Context) {
+	orderId, err := strconv.Atoi(c.Query("order_id"))
+	if err != nil {
+		errs := response.ClientResponse(http.StatusInternalServerError, "error from orderID", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errs)
+		return
+	}
+	err = usecase.ShipOrder(orderId)
+	if err != nil {
+		errs := response.ClientResponse(http.StatusInternalServerError, "Couldn't ship the order", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errs)
+		return
+	}
+	success := response.ClientResponse(http.StatusOK, "Order Shipped Successfully", nil, nil)
+	c.JSON(http.StatusOK, success)
+}
+
+// @Summary Get All order details for admin
+// @Description Get all order details to the admin side
+// @Tags Admin Order Management
+// @Accept   json
+// @Produce  json
+// @Security Bearer
+// @Param page query string false "Page number"
+// @Param count query string false "Page Count"
+// @Success 200 {object} response.Response{}
+// @Failure 500 {object} response.Response{}
+// @Router /admin/order   [GET]
+func GetAllOrderDetailsForAdmin(c *gin.Context) {
+	pageStr := c.DefaultQuery("page", "1")
+	page, err := strconv.Atoi(pageStr)
+	if err != nil {
+		errs := response.ClientResponse(http.StatusBadRequest, "page number not in right format", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errs)
+		return
+	}
+	countStr := c.DefaultQuery("count", "20")
+	pageSize, err := strconv.Atoi(countStr)
+	if err != nil {
+		errs := response.ClientResponse(http.StatusBadRequest, "page count not in right format", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errs)
+		return
+	}
+	allOrderDetails, err := usecase.GetAllOrderDetailsForAdmin(page, pageSize)
+	if err != nil {
+		errs := response.ClientResponse(http.StatusInternalServerError, "Could not retrieve order details", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errs)
+		return
+	}
+	success := response.ClientResponse(http.StatusOK, "Order Details Retrieved successfully", allOrderDetails, nil)
+	c.JSON(http.StatusOK, success)
+}
+
+// @Summary Order Items from cart
+// @Description Order all products which is currently present inside  the cart
+// @Tags User Order Management
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param orderBody body models.OrderFromCart true "Order details"
+// @Success 200 {object} response.Response{}
+// @Failure 500 {object} response.Response{}
+// @Router /user/checkout    [POST]
+func OrderItemsFromCart(c *gin.Context) {
+	id, _ := c.Get("user_id")
+	userID := id.(int)
+	var orderFromCart models.OrderFromCart
+	if err := c.ShouldBindJSON(&orderFromCart); err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "bad request", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
+		return
+	}
+	orderSuccessResponse, err := usecase.OrderItemsFromCart(orderFromCart, userID)
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusInternalServerError, "Could not do the order", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errorRes)
+		return
+	}
+
+	successRes := response.ClientResponse(http.StatusOK, "Successfully created the order", orderSuccessResponse, nil)
+	c.JSON(http.StatusOK, successRes)
+
+}
+
+// @Summary Get Order Details to user side
+// @Description Get all order details done by user to user side
+// @Tags User Order Management
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param page query string false "Page"
+// @Param count query string false "Count"
+// @Success 200 {object} response.Response{}
+// @Failure 500 {object} response.Response{}
+// @Router /user/order   [GET]
+func GetOrderDetails(c *gin.Context) {
+	pageStr := c.DefaultQuery("page", "1")
+	page, err := strconv.Atoi(pageStr)
+	if err != nil {
+		errs := response.ClientResponse(http.StatusBadRequest, "page number not in correct format", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errs)
+		return
+	}
+	pageSize, err := strconv.Atoi(c.DefaultQuery("count", "10"))
+	if err != nil {
+		errs := response.ClientResponse(http.StatusBadRequest, "page count not in right format", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errs)
+		return
+	}
+	id, _ := c.Get("user_id")
+	UserID := id.(int)
+	OrderDetails, err := usecase.GetOrderDetails(UserID, page, pageSize)
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusInternalServerError, "Could not do the order", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errorRes)
+		return
+	}
+	successRes := response.ClientResponse(http.StatusOK, "Full Order Details", OrderDetails, nil)
+	c.JSON(http.StatusOK, successRes)
+}
+
+// @Summary Cancel order
+// @Description Cancel order by the user using order ID
+// @Tags User Order Management
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param id query string true "Order ID"
+// @Success 200 {object} response.Response{}
+// @Failure 500 {object} response.Response{}
+// @Router /user/order   [PUT]
+func CancelOrder(c *gin.Context) {
+	orderID, err := strconv.Atoi(c.Query("id"))
+	if err != nil {
+		errs := response.ClientResponse(http.StatusInternalServerError, "error from orderID", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errs)
+		return
+	}
+	id, _ := c.Get("user_id")
+	userID := id.(int)
+	err = usecase.CancelOrders(orderID, userID)
+	if err != nil {
+		errs := response.ClientResponse(http.StatusInternalServerError, "Could not cancel the order", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errs)
+		return
+	}
+	success := response.ClientResponse(http.StatusOK, "Cancel Successfull", nil, nil)
+	c.JSON(http.StatusOK, success)
+}
+
+// @Summary		Checkout section
+// @Description	Add products to carts  for the purchase
+// @Tags			User Order Management
+// @Accept			json
+// @Produce		    json
+// @Security		Bearer
+// @Success		200	{object}	response.Response{}
+// @Failure		500	{object}	response.Response{}
+// @Router			/user/checkout    [GET]
+func CheckOut(c *gin.Context) {
+	userID, _ := c.Get("user_id")
+	checkoutDetails, err := usecase.Checkout(userID.(int))
+
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusInternalServerError, "failed to retrieve details", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errorRes)
+		return
+	}
+
+	successRes := response.ClientResponse(http.StatusOK, "Checkout Page loaded successfully", checkoutDetails, nil)
+	c.JSON(http.StatusOK, successRes)
+}
+
+// @Summary		Checkout section
+// @Description	Add products to carts  for the purchase
+// @Tags			User Order Management
+// @Accept			json
+// @Produce		    json
+// @Param    order_id    query    int    true    "address id"
+// @Security		Bearer
+// @Success		200	{object}	response.Response{}
+// @Failure		500	{object}	response.Response{}
+// @Router			/user/order/place-order     [GET]
+func PlaceOrderCOD(c *gin.Context) {
+	order_id, err := strconv.Atoi(c.Query("order_id"))
+	if err != nil {
+		errs := response.ClientResponse(http.StatusInternalServerError, "error from orderID", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errs)
+		return
+	}
+	paymentMethodID, err := usecase.PaymentMethodID(order_id)
+	if err != nil {
+		err := response.ClientResponse(http.StatusInternalServerError, "error from paymentId ", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+	if paymentMethodID == 1 {
+		err := usecase.ExecutePurchaseCOD(order_id)
+		if err != nil {
+			errorRes := response.ClientResponse(http.StatusInternalServerError, "error in cash on delivery ", nil, err.Error())
+			c.JSON(http.StatusInternalServerError, errorRes)
+			return
+		}
+		success := response.ClientResponse(http.StatusOK, "Placed Order with cash on delivery", nil, nil)
+		c.JSON(http.StatusOK, success)
+	}
+	if paymentMethodID == 2 {
+		scheme := "http"
+		if c.Request.TLS != nil {
+			scheme = "https"
+		}
+		link := fmt.Sprintf("%s://%s/user/razorpay?order_id=%d", scheme, c.Request.Host, order_id)
+		success := response.ClientResponse(http.StatusOK, "Placed Order with razor pay following link", link, nil)
+		c.JSON(http.StatusOK, success)
+	}
+}
+
+// @Summary		Checkout section
+// @Description	Print Purchase Invoice
+// @Tags			User Order Management
+// @Accept			json
+// @Produce		    json
+// @Security		Bearer
+// @Param   order_id  query string true "order_id"
+// @Success		200	{object}	response.Response{}
+// @Failure		500	{object}	response.Response{}
+// @Router			/user/checkout/print     [GET]
+func PrintInvoice(c *gin.Context) {
+	orderId := c.Query("order_id")
+	orderIdInt, err := strconv.Atoi(orderId)
+	if err != nil {
+		err = errors.New("error in coverting order id" + err.Error())
+		errRes := response.ClientResponse(http.StatusBadGateway, "error in reading the order id", nil, err)
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
+	pdf, err := usecase.PrintInvoice(orderIdInt)
+	fmt.Println("error ", err)
+	if err != nil {
+		errRes := response.ClientResponse(http.StatusBadGateway, "error in printing the invoice", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
+
+	c.Header("Content-Disposition", "attachment;filename=invoice.pdf")
+
+	pdfFilePath := "salesReport/invoice.pdf"
+
+	err = pdf.OutputFileAndClose(pdfFilePath)
+	if err != nil {
+		errRes := response.ClientResponse(http.StatusBadGateway, "error in printing invoice2", nil, err)
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
+
+	c.Header("Content-Disposition", "attachment; filename=sales_report.pdf")
+	c.Header("Content-Type", "application/pdf")
+
+	c.File(pdfFilePath)
+
+	c.Header("Content-Type", "application/pdf")
+
+	err = pdf.Output(c.Writer)
+	if err != nil {
+		errRes := response.ClientResponse(http.StatusBadGateway, "error in printing invoice1", nil, err)
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
+
+	successRes := response.ClientResponse(http.StatusOK, "the request was successfull", pdf, nil)
+	c.JSON(http.StatusOK, successRes)
+}

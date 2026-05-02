@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Soxenly | Secure Payment</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --soxenly-green: #1B4332;
+        --soxenly-leaf: #40916C;
+        --soxenly-cream: #F8F9F5;
+        --soxenly-beige: #E9EAD8;
+        --soxenly-charcoal: #1A1A1A;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: 'Outfit', sans-serif;
+        background-color: var(--soxenly-cream);
+        color: var(--soxenly-charcoal);
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .payment-card {
+        background: #ffffff;
+        border: 1px solid var(--soxenly-beige);
+        padding: 48px;
+        width: 100%;
+        max-width: 480px;
+        position: relative;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      }
+      .header {
+        font-family: 'Playfair Display', serif;
+        font-weight: 400;
+        font-size: 2.5rem;
+        color: var(--soxenly-green);
+        margin-bottom: 40px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--soxenly-beige);
+        text-align: center;
+      }
+      .detail-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 24px;
+        font-size: 0.9rem;
+      }
+      .detail-label {
+        color: rgba(26, 26, 26, 0.5);
+        text-transform: uppercase;
+        font-weight: 600;
+        font-size: 0.7rem;
+        letter-spacing: 0.15em;
+      }
+      .detail-value {
+        font-weight: 500;
+        color: var(--soxenly-green);
+      }
+      .total-section {
+        margin-top: 40px;
+        padding: 30px 0;
+        border-top: 1px solid var(--soxenly-beige);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .total-label {
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.1em;
+        color: var(--soxenly-charcoal);
+      }
+      .total-amount {
+        font-family: 'Playfair Display', serif;
+        font-size: 3rem;
+        font-weight: 400;
+        line-height: 1;
+        color: var(--soxenly-green);
+      }
+      #rzp-button1 {
+        width: 100%;
+        background: var(--soxenly-green);
+        color: var(--soxenly-cream);
+        border: 1px solid var(--soxenly-green);
+        padding: 22px;
+        font-family: 'Outfit', sans-serif;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+        letter-spacing: 0.15em;
+        margin-top: 40px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+      #rzp-button1:hover {
+        background: var(--soxenly-leaf);
+        border-color: var(--soxenly-leaf);
+      }
+      .footer-note {
+        margin-top: 30px;
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        text-align: center;
+        color: rgba(26, 26, 26, 0.4);
+        font-weight: 600;
+        letter-spacing: 0.1em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="payment-card">
+      <div class="header">Secure Checkout</div>
+      
+      <div class="detail-row">
+        <span class="detail-label">Customer Name</span>
+        <span class="detail-value" id="user">{{.user_name}}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Reference ID</span>
+        <span class="detail-value" id="order">#{{.order_id}}</span>
+      </div>
+
+      <div class="total-section">
+        <span class="total-label">Grand Total</span>
+        <span class="total-amount">₹{{.total}}</span>
+      </div>
+
+      <button id="rzp-button1">Pay Now</button>
+
+      <p class="footer-note">Payment encrypted via Razorpay SSL</p>
+    </div>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+      var orderText = document.getElementById("order").innerHTML;
+      var orderid = orderText.replace('#', '').trim();
+      var options = {
+        key: "{{.key_id}}",
+        amount: "{{.final_price}}",
+        currency: "INR",
+        name: "Soxenly",
+        description: "Order Checkout",
+        order_id: "{{.razor_id}}",
+        handler: function (response) {
+          verifyPayment(response, orderid);
+        },
+        prefill: {
+          name: "{{.user_name}}",
+        },
+        theme: {
+          color: "#1B4332",
+        },
+      };
+      var rzp1 = new Razorpay(options);
+      document.getElementById("rzp-button1").onclick = function (e) {
+        rzp1.open();
+        e.preventDefault();
+      };
+
+      function verifyPayment(res, orderid) {
+        $.ajax({
+          url: `/user/update_status?order_id=${orderid}&payment_id=${res.razorpay_payment_id}&razor_id=${res.razorpay_order_id}&signature=${res.razorpay_signature}`,
+          method: "GET",
+          success: (response) => {
+            if (response.status_code === 200) {
+              window.location.href = "{{.frontend_url}}/success?order_id={{.order_id}}";
+            } else {
+              alert("Payment verification failed. Please contact support.");
+            }
+          },
+        });
+      }
+    </script>
+  </body>
+</html>
