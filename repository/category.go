@@ -26,6 +26,17 @@ func CheckIfCategoryAlreadyExists(category string) (bool, error) {
 }
 
 func AddCategory(category models.Category) (domain.Category, error) {
+	var existingCat domain.Category
+
+	if err := db.DB.Unscoped().Where("category = ?", category.Category).First(&existingCat).Error; err == nil {
+		db.DB.Unscoped().Model(&existingCat).Updates(map[string]interface{}{
+			"deleted_at": nil,
+			"image":      category.Image,
+		})
+		return existingCat, nil
+	}
+
+	// Otherwise, create a brand new one
 	newCat := domain.Category{
 		Category: category.Category,
 		Image:    category.Image,
@@ -45,7 +56,7 @@ func DeleteCategory(id int) error {
 		return errors.New("category for given id does not exist")
 	}
 
-	if err := db.DB.Where("id = ?", id).Delete(&domain.Category{}).Error; err != nil {
+	if err := db.DB.Unscoped().Where("id = ?", id).Delete(&domain.Category{}).Error; err != nil {
 		return err
 	}
 	return nil
@@ -55,7 +66,6 @@ func UpdateCategory(category models.Category) (domain.Category, error) {
 	if db.DB == nil {
 		return domain.Category{}, errors.New("database connection is nil")
 	}
-	
 	updateData := map[string]interface{}{
 		"category": category.Category,
 		"image":    category.Image,
@@ -64,7 +74,7 @@ func UpdateCategory(category models.Category) (domain.Category, error) {
 	if err := db.DB.Model(&domain.Category{}).Where("id = ?", category.ID).Updates(updateData).Error; err != nil {
 		return domain.Category{}, err
 	}
-	
+
 	var updatedCat domain.Category
 	if err := db.DB.First(&updatedCat, category.ID).Error; err != nil {
 		return domain.Category{}, err
