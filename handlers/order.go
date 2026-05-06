@@ -1,6 +1,7 @@
 package handlers
 
 import (
+
 	"Zhooze/usecase"
 	"Zhooze/utils/models"
 	"Zhooze/utils/response"
@@ -256,31 +257,14 @@ func PlaceOrderCOD(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, errs)
 		return
 	}
-	paymentMethodID, err := usecase.PaymentMethodID(order_id)
-	if err != nil {
-		err := response.ClientResponse(http.StatusInternalServerError, "error from paymentId ", nil, err.Error())
-		c.JSON(http.StatusInternalServerError, err)
-		return
+	// Only payment method is Razorpay
+	scheme := "http"
+	if c.Request.TLS != nil {
+		scheme = "https"
 	}
-	if paymentMethodID == 1 {
-		err := usecase.ExecutePurchaseCOD(order_id)
-		if err != nil {
-			errorRes := response.ClientResponse(http.StatusInternalServerError, "error in cash on delivery ", nil, err.Error())
-			c.JSON(http.StatusInternalServerError, errorRes)
-			return
-		}
-		success := response.ClientResponse(http.StatusOK, "Placed Order with cash on delivery", nil, nil)
-		c.JSON(http.StatusOK, success)
-	}
-	if paymentMethodID == 2 {
-		scheme := "http"
-		if c.Request.TLS != nil {
-			scheme = "https"
-		}
-		link := fmt.Sprintf("%s://%s/user/razorpay?order_id=%d", scheme, c.Request.Host, order_id)
-		success := response.ClientResponse(http.StatusOK, "Placed Order with razor pay following link", link, nil)
-		c.JSON(http.StatusOK, success)
-	}
+	link := fmt.Sprintf("%s://%s/user/razorpay?order_id=%d", scheme, c.Request.Host, order_id)
+	success := response.ClientResponse(http.StatusOK, "Placed Order with razor pay following link", link, nil)
+	c.JSON(http.StatusOK, success)
 }
 
 // @Summary		Checkout section
