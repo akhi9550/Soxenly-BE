@@ -24,10 +24,7 @@ func ConnectDatabase(confg config.Config) (*gorm.DB, error) {
 	db.AutoMigrate(&domain.User{})
 	db.AutoMigrate(&domain.Product{})
 	db.AutoMigrate(&domain.ProductVariant{})
-	// ONE-TIME RESET: Drop the categories table to clear all constraints and data
-	// WARNING: This will delete all category records. Remove this line after running once.
-	db.Exec("DROP TABLE IF EXISTS categories CASCADE")
-	
+
 	db.AutoMigrate(&domain.Category{})
 	db.AutoMigrate(&domain.Address{})
 	db.AutoMigrate(&domain.Cart{})
