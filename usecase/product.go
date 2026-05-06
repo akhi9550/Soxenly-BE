@@ -6,9 +6,9 @@ import (
 	"Zhooze/repository"
 	"Zhooze/utils/models"
 	"errors"
-	"fmt"
 	"mime/multipart"
 	"strings"
+	"sync"
 )
 
 func ShowAllProducts(page int, count int, category string, minPrice, maxPrice float64) ([]models.ProductBrief, error) {
@@ -202,7 +202,7 @@ func AddProducts(product models.Product) (domain.Product, error) {
 	if err != nil {
 		return domain.Product{}, err
 	}
-	
+
 	return productResponse, nil
 }
 
@@ -237,18 +237,44 @@ func DeleteImage(productID int, url string) error {
 	}
 	return nil
 }
-func UpdateProductImage(id int, file *multipart.FileHeader) error {
+func UpdateProductImage(id int, files []*multipart.FileHeader) error {
+	var wg sync.WaitGroup
+	urlChan := make(chan string, len(files))
+	errChan := make(chan error, len(files))
 
-	url, err := helper.AddImageToS3(file)
-	if err != nil {
-		fmt.Println("error in s3", err)
-		return err
+	for _, file := range files {
+		wg.Add(1)
+		go func(f *multipart.FileHeader) {
+			defer wg.Done()
+			url, err := helper.AddImageToCloudinary(f)
+			if err != nil {
+				errChan <- err
+				return
+			}
+			urlChan <- url
+		}(file)
 	}
-	err = repository.UpdateProductImage(id, url)
-	if err != nil {
-		fmt.Println("error in updation", err)
-		return err
+
+	wg.Wait()
+	close(urlChan)
+	close(errChan)
+
+	if len(errChan) > 0 {
+		return <-errChan
 	}
+
+	var urls []string
+	for url := range urlChan {
+		urls = append(urls, url)
+	}
+
+	if len(urls) > 0 {
+		err := repository.UpdateProductImage(id, urls)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -280,7 +306,7 @@ func GetProductDetails(id int) (models.ProductBrief, error) {
 	if err != nil {
 		return models.ProductBrief{}, err
 	}
-	
+
 	inStock := false
 	for _, v := range product.Variants {
 		if v.Stock > 0 {
@@ -293,7 +319,7 @@ func GetProductDetails(id int) (models.ProductBrief, error) {
 	} else {
 		product.ProductStatus = "out of stock"
 	}
-	
+
 	return product, nil
 }
 
@@ -302,7 +328,7 @@ func GetNewArrivals(count int) ([]models.ProductBrief, error) {
 	if err != nil {
 		return []models.ProductBrief{}, err
 	}
-	
+
 	for i := range productDetails {
 		p := &productDetails[i]
 		inStock := false
@@ -318,6 +344,6 @@ func GetNewArrivals(count int) ([]models.ProductBrief, error) {
 			p.ProductStatus = "out of stock"
 		}
 	}
-	
+
 	return productDetails, nil
 }

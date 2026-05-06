@@ -26,10 +26,15 @@ type Config struct {
 	KEY_ID_FOR_PAY     string `mapstructure:"KEY_ID_FOR_PAY"`
 	SECRET_KEY_FOR_PAY string `mapstructure:"SECRET_KEY_FOR_PAY"`
 	FRONTEND_URL       string `mapstructure:"FRONTEND_URL"`
+	GOOGLE_CLIENT_ID   string `mapstructure:"GOOGLE_CLIENT_ID"`
+
+	AdminEmail    string `mapstructure:"ADMIN_EMAIL"`
+	AdminPassword string `mapstructure:"ADMIN_PASSWORD"`
+	CloudinaryURL string `mapstructure:"CLOUDINARY_URL"`
 }
 
 var envs = []string{
-	"BASE_URL", "DB_HOST", "DB_NAME", "DB_USER", "DB_PORT", "DB_PASSWORD", "TWILIO_AUTHTOKEN", "TWILIO_ACCOUNTSID", "TWILIO_SERVICESID", "KEY", "KEY_ADMIN", "KEY_ID_FOR_PAY", "SECRET_KEY_FOR_PAY", "FRONTEND_URL",
+	"BASE_URL", "DB_HOST", "DB_NAME", "DB_USER", "DB_PORT", "DB_PASSWORD", "TWILIO_AUTHTOKEN", "TWILIO_ACCOUNTSID", "TWILIO_SERVICESID", "KEY", "KEY_ADMIN", "KEY_ID_FOR_PAY", "SECRET_KEY_FOR_PAY", "FRONTEND_URL", "GOOGLE_CLIENT_ID", "ADMIN_EMAIL", "ADMIN_PASSWORD", "CLOUDINARY_URL",
 }
 
 var (

@@ -1,11 +1,16 @@
 package helper
 
 import (
+	"context"
 	"fmt"
-	"io"
 	"mime/multipart"
-	"os"
 	"strings"
+	"sync"
+
+	"Zhooze/config"
+
+	"github.com/cloudinary/cloudinary-go/v2"
+	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 )
 
 func GetImageMimeType(filename string) string {
@@ -27,39 +32,43 @@ func GetImageMimeType(filename string) string {
 	return "application/octet-stream"
 }
 
-func AddImageToS3(file *multipart.FileHeader) (string, error) {
-	// Create uploads directory if not exists
-	uploadDir := "./uploads"
-	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
-		err := os.MkdirAll(uploadDir, os.ModePerm)
+var (
+	cld      *cloudinary.Cloudinary
+	cldOnce  sync.Once
+	cldError error
+)
+
+func AddImageToCloudinary(file *multipart.FileHeader) (string, error) {
+	cldOnce.Do(func() {
+		cfg, err := config.LoadConfig()
 		if err != nil {
-			return "", err
+			cldError = fmt.Errorf("failed to load config: %w", err)
+			return
 		}
+
+		cld, cldError = cloudinary.NewFromURL(cfg.CloudinaryURL)
+		if cldError != nil {
+			cldError = fmt.Errorf("failed to initialize Cloudinary: %w", cldError)
+		}
+	})
+
+	if cldError != nil {
+		return "", cldError
 	}
 
-	// Create unique filename using timestamp to avoid collisions
-	filename := fmt.Sprintf("%d_%s", os.Getpid(), strings.ReplaceAll(file.Filename, " ", "_"))
-	dst := fmt.Sprintf("%s/%s", uploadDir, filename)
-	
-	// Open source file
 	src, err := file.Open()
 	if err != nil {
 		return "", err
 	}
 	defer src.Close()
 
-	// Create destination file
-	out, err := os.Create(dst)
+	ctx := context.Background()
+	uploadResult, err := cld.Upload.Upload(ctx, src, uploader.UploadParams{
+		Folder: "soxenly_uploads",
+	})
 	if err != nil {
-		return "", err
-	}
-	defer out.Close()
-
-	// Copy content
-	_, err = io.Copy(out, src)
-	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to upload image to Cloudinary: %w", err)
 	}
 
-	return "/uploads/" + filename, nil
+	return uploadResult.SecureURL, nil
 }

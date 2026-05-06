@@ -51,7 +51,7 @@ func DeleteCategory(id int) error {
 }
 
 func UpdateCategoryImage(id int, file *multipart.FileHeader) (string, error) {
-	url, err := helper.AddImageToS3(file)
+	url, err := helper.AddImageToCloudinary(file)
 	if err != nil {
 		return "", err
 	}

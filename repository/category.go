@@ -9,7 +9,7 @@ import (
 
 func GetCategory() ([]domain.Category, error) {
 	var category []domain.Category
-	err := db.DB.Raw("SELECT * FROM categories WHERE deleted_at IS NULL").Scan(&category).Error
+	err := db.DB.Find(&category).Error
 	if err != nil {
 		return nil, err
 	}
@@ -26,17 +26,16 @@ func CheckIfCategoryAlreadyExists(category string) (bool, error) {
 }
 
 func AddCategory(category models.Category) (domain.Category, error) {
-	var existingCat domain.Category
-
-	if err := db.DB.Unscoped().Where("category = ?", category.Category).First(&existingCat).Error; err == nil {
-		db.DB.Unscoped().Model(&existingCat).Updates(map[string]interface{}{
-			"deleted_at": nil,
-			"image":      category.Image,
-		})
-		return existingCat, nil
+	// Check if an ACTIVE category with this name already exists
+	exists, err := CheckIfCategoryAlreadyExists(category.Category)
+	if err != nil {
+		return domain.Category{}, err
+	}
+	if exists {
+		return domain.Category{}, errors.New("category already exists")
 	}
 
-	// Otherwise, create a brand new one
+	// Create a brand new one (Partial index in DB handles the uniqueness with soft-deleted rows)
 	newCat := domain.Category{
 		Category: category.Category,
 		Image:    category.Image,
@@ -56,7 +55,16 @@ func DeleteCategory(id int) error {
 		return errors.New("category for given id does not exist")
 	}
 
-	if err := db.DB.Unscoped().Where("id = ?", id).Delete(&domain.Category{}).Error; err != nil {
+	// Check if any active products are associated with this category
+	var productCount int64
+	if err := db.DB.Model(&domain.Product{}).Where("category_id = ? AND deleted_at IS NULL", id).Count(&productCount).Error; err != nil {
+		return err
+	}
+	if productCount > 0 {
+		return errors.New("cannot delete category: products are still assigned to it")
+	}
+
+	if err := db.DB.Where("id = ?", id).Delete(&domain.Category{}).Error; err != nil {
 		return err
 	}
 	return nil

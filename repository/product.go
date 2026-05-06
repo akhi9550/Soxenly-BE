@@ -15,7 +15,7 @@ func ShowAllProducts(page int, count int, category string, minPrice, maxPrice fl
 	}
 	offset := (page - 1) * count
 	var productBrief []models.ProductBrief
-	
+
 	query := `SELECT p.*, c.category as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.deleted_at IS NULL`
 	var args []interface{}
 
@@ -39,12 +39,12 @@ func ShowAllProducts(page int, count int, category string, minPrice, maxPrice fl
 	if err != nil {
 		return nil, err
 	}
-	
+
 	for i := range productBrief {
 		variants, _ := GetVariants(int(productBrief[i].ID))
 		productBrief[i].Variants = variants
 	}
-	
+
 	return productBrief, nil
 }
 
@@ -64,12 +64,12 @@ func ShowAllProductsFromAdmin(page int, count int) ([]models.ProductBrief, error
 	if err != nil {
 		return nil, err
 	}
-	
+
 	for i := range productBrief {
 		variants, _ := GetVariants(int(productBrief[i].ID))
 		productBrief[i].Variants = variants
 	}
-	
+
 	return productBrief, nil
 }
 
@@ -150,7 +150,7 @@ func AddProducts(product models.Product) (domain.Product, error) {
 		CategoryID:  uint(product.CategoryID),
 		Price:       product.Price,
 	}
-	
+
 	if err := db.DB.Create(&p).Error; err != nil {
 		log.Println(err.Error())
 		return domain.Product{}, err
@@ -210,7 +210,7 @@ func UpdateProduct(p models.ProductUpdate) (models.ProductUpdateReciever, error)
 	if db.DB == nil {
 		return models.ProductUpdateReciever{}, errors.New("database connection is nil")
 	}
-	
+
 	updateData := map[string]interface{}{
 		"name":        p.Name,
 		"description": p.Description,
@@ -221,7 +221,7 @@ func UpdateProduct(p models.ProductUpdate) (models.ProductUpdateReciever, error)
 	if err := db.DB.Model(&domain.Product{}).Where("id = ?", p.ProductId).Updates(updateData).Error; err != nil {
 		return models.ProductUpdateReciever{}, err
 	}
-	
+
 	// Soft delete old variants and add new ones
 	db.DB.Where("product_id = ?", p.ProductId).Delete(&domain.ProductVariant{})
 	for _, v := range p.Variants {
@@ -248,10 +248,16 @@ func DoesProductExist(productID int) (bool, error) {
 	return count > 0, nil
 }
 
-func UpdateProductImage(productID int, url string) error {
-	err := db.DB.Exec("INSERT INTO images (product_id,url) VALUES ($1,$2) RETURNING * ", productID, url).Error
-	if err != nil {
-		return errors.New("error while insert image to database")
+func UpdateProductImage(productID int, urls []string) error {
+	var images []domain.Image
+	for _, url := range urls {
+		images = append(images, domain.Image{
+			ProductId: uint(productID),
+			Url:       url,
+		})
+	}
+	if err := db.DB.Create(&images).Error; err != nil {
+		return errors.New("error while inserting images to database")
 	}
 	return nil
 }
@@ -313,13 +319,13 @@ func GetProductDetails(id int) (models.ProductBrief, error) {
 	if product.ID == 0 {
 		return models.ProductBrief{}, errors.New("product not found")
 	}
-	
+
 	variants, _ := GetVariants(int(product.ID))
 	product.Variants = variants
-	
+
 	img, _ := GetImage(int(product.ID))
 	product.Image = img
-	
+
 	return product, nil
 }
 
@@ -330,13 +336,13 @@ func GetNewArrivals(count int) ([]models.ProductBrief, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	for i := range productBrief {
 		variants, _ := GetVariants(int(productBrief[i].ID))
 		productBrief[i].Variants = variants
 		img, _ := GetImage(int(productBrief[i].ID))
 		productBrief[i].Image = img
 	}
-	
+
 	return productBrief, nil
 }

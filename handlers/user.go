@@ -1,13 +1,12 @@
 package handlers
 
 import (
+	"Zhooze/config"
 	"Zhooze/usecase"
 	"Zhooze/utils/models"
 	"Zhooze/utils/response"
 	"net/http"
 	"strconv"
-
-	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -94,7 +93,14 @@ func GoogleLogin(c *gin.Context) {
 		return
 	}
 
-	clientID := os.Getenv("GOOGLE_CLIENT_ID")
+	config, err := config.LoadConfig()
+	if err != nil {
+		errs := response.ClientResponse(http.StatusInternalServerError, "Failed to load config", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errs)
+		return
+	}
+
+	clientID := config.GOOGLE_CLIENT_ID
 	payload, err := idtoken.Validate(c.Request.Context(), req.Token, clientID)
 	if err != nil {
 		errs := response.ClientResponse(http.StatusUnauthorized, "Invalid Google token", nil, err.Error())

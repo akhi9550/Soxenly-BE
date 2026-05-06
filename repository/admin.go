@@ -246,3 +246,81 @@ func DeleteUser(id string) error {
 	}
 	return nil
 }
+
+func RevenueTrend(timeframe string) ([]models.GraphData, error) {
+	var graphData []models.GraphData
+	var interval string
+	var step string
+	var limit int
+
+	switch timeframe {
+	case "hourly":
+		interval = "hour"
+		step = "1 hour"
+		limit = 23
+	case "daily":
+		interval = "day"
+		step = "1 day"
+		limit = 6
+	case "weekly":
+		interval = "week"
+		step = "1 week"
+		limit = 3
+	case "monthly":
+		interval = "month"
+		step = "1 month"
+		limit = 11
+	default:
+		interval = "day"
+		step = "1 day"
+		limit = 6
+	}
+
+	query := fmt.Sprintf(`
+		WITH ts AS (
+			SELECT generate_series(
+				date_trunc('%s', NOW()) - INTERVAL '%d %s',
+				date_trunc('%s', NOW()),
+				INTERVAL '%s'
+			) AS series_time
+		)
+		SELECT 
+			TO_CHAR(ts.series_time, '%s') as label, 
+			COALESCE(SUM(o.final_price), 0) as value,
+			COALESCE(MAX(o.final_price), 0) as high,
+			COALESCE(MIN(o.final_price), 0) as low,
+			COALESCE((SELECT final_price FROM orders WHERE date_trunc('%s', created_at) = ts.series_time AND payment_status = 'paid' AND approval = true ORDER BY created_at ASC LIMIT 1), 0) as open,
+			COALESCE((SELECT final_price FROM orders WHERE date_trunc('%s', created_at) = ts.series_time AND payment_status = 'paid' AND approval = true ORDER BY created_at DESC LIMIT 1), 0) as close
+		FROM ts
+		LEFT JOIN orders o ON date_trunc('%s', o.created_at) = ts.series_time 
+			AND o.payment_status = 'paid' 
+			AND o.approval = true
+		GROUP BY ts.series_time
+		ORDER BY ts.series_time ASC`, 
+		interval, limit, interval, interval, step, getFormatForInterval(interval), interval, interval, interval)
+
+	if err := db.DB.Raw(query).Scan(&graphData).Error; err != nil {
+		return nil, err
+	}
+
+	if graphData == nil {
+		return []models.GraphData{}, nil
+	}
+
+	return graphData, nil
+}
+
+func getFormatForInterval(interval string) string {
+	switch interval {
+	case "hour":
+		return "HH24:00"
+	case "day":
+		return "DD Mon"
+	case "week":
+		return "W Mon"
+	case "month":
+		return "Mon YYYY"
+	default:
+		return "DD Mon"
+	}
+}

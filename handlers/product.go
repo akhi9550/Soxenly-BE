@@ -4,9 +4,10 @@ import (
 	"Zhooze/usecase"
 	"Zhooze/utils/models"
 	"Zhooze/utils/response"
-	"log"
 	"net/http"
 	"strconv"
+
+	cleanvalidator "Zhooze/utils/validator"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -25,7 +26,7 @@ import (
 func ShowAllProducts(c *gin.Context) {
 	pageStr := c.DefaultQuery("page", "1")
 	page, _ := strconv.Atoi(pageStr)
-	
+
 	countStr := c.DefaultQuery("count", "10")
 	count, _ := strconv.Atoi(countStr)
 
@@ -71,7 +72,6 @@ func FilterCategory(c *gin.Context) {
 	success := response.ClientResponse(http.StatusOK, "Successfully filtered the category", productCategory, nil)
 	c.JSON(http.StatusOK, success)
 }
-
 
 // @Summary Get Products Details
 // @Description Retrieve all product Details
@@ -119,7 +119,7 @@ func ShowAllProductsFromAdmin(c *gin.Context) {
 // @Success 200 {object} response.Response{}
 // @Failure 500 {object} response.Response{}
 // @Router /admin/products/search  [GET]
-func  SearchProducts(c *gin.Context) {
+func SearchProducts(c *gin.Context) {
 
 	var prefix models.SearchItems
 
@@ -159,7 +159,8 @@ func AddProducts(c *gin.Context) {
 	}
 	err := validator.New().Struct(product)
 	if err != nil {
-		errs := response.ClientResponse(http.StatusBadRequest, "Constraints not statisfied", nil, err.Error())
+		cleanMsg := cleanvalidator.GetErrorMessage(err)
+		errs := response.ClientResponse(http.StatusBadRequest, cleanMsg, nil, err.Error())
 		c.JSON(http.StatusBadRequest, errs)
 		return
 	}
@@ -259,14 +260,10 @@ func UploadImage(c *gin.Context) {
 		return
 	}
 
-	for _, file := range files {
-		err := usecase.UpdateProductImage(id, file)
-		if err != nil {
-			log.Println(err)
-			errorRes := response.ClientResponse(http.StatusBadRequest, "Could not change one or more images", nil, err.Error())
-			c.JSON(http.StatusBadRequest, errorRes)
-			return
-		}
+	if err := usecase.UpdateProductImage(id, files); err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "Could not upload images", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
+		return
 	}
 
 	successRes := response.ClientResponse(http.StatusOK, "Successfully changed images", nil, nil)
@@ -281,14 +278,14 @@ func GetProductDetails(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, errorRes)
 		return
 	}
-	
+
 	product, err := usecase.GetProductDetails(id)
 	if err != nil {
 		errorRes := response.ClientResponse(http.StatusInternalServerError, "could not retrieve product details", nil, err.Error())
 		c.JSON(http.StatusInternalServerError, errorRes)
 		return
 	}
-	
+
 	successRes := response.ClientResponse(http.StatusOK, "Successfully retrieved product details", product, nil)
 	c.JSON(http.StatusOK, successRes)
 }
@@ -296,7 +293,7 @@ func GetProductDetails(c *gin.Context) {
 func GetNewArrivals(c *gin.Context) {
 	countStr := c.DefaultQuery("count", "4")
 	count, _ := strconv.Atoi(countStr)
-	
+
 	products, err := usecase.GetNewArrivals(count)
 	if err != nil {
 		errs := response.ClientResponse(http.StatusInternalServerError, "Couldn't retrieve new arrivals", nil, err.Error())

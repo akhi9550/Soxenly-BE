@@ -4,11 +4,11 @@ import "gorm.io/gorm"
 
 type Product struct {
 	gorm.Model
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	CategoryID  uint      `json:"category_id"`
-	Category    Category  `json:"-" gorm:"foreignkey:CategoryID;constraint:OnDelete:CASCADE"`
-	Price       float64   `json:"price"`
+	Name        string           `json:"name"`
+	Description string           `json:"description"`
+	CategoryID  uint             `json:"category_id"`
+	Category    Category         `json:"-" gorm:"foreignkey:CategoryID;constraint:OnDelete:CASCADE"`
+	Price       float64          `json:"price"`
 	Variants    []ProductVariant `json:"variants" gorm:"foreignKey:ProductID;constraint:OnDelete:CASCADE"`
 }
 
@@ -32,6 +32,6 @@ type Image struct {
 
 type Category struct {
 	gorm.Model
-	Category  string `json:"category" gorm:"unique; not null"`
-	Image     string `json:"image"`
+	Category string `json:"category" gorm:"not null"`
+	Image    string `json:"image"`
 }

@@ -41,7 +41,7 @@ func ConnectDatabase(confg config.Config) (*gorm.DB, error) {
 	db.AutoMigrate(&domain.Image{})
 	db.AutoMigrate(&domain.Wallet{})
 	db.AutoMigrate(&domain.Banner{})
-	CheckAndCreateAdmin(db)
+	CheckAndCreateAdmin(confg, db)
 	SeedPaymentMethods(db)
 	return DB, err
 }
@@ -60,22 +60,22 @@ func SeedPaymentMethods(db *gorm.DB) {
 	}
 }
 
-func CheckAndCreateAdmin(db *gorm.DB) {
+func CheckAndCreateAdmin(config config.Config, db *gorm.DB) {
 	var count int64
 	db.Model(&domain.User{}).Count(&count)
 	if count == 0 {
-		password := "admin@123"
+		password := config.AdminPassword
 		hashPassword, err := helper.PasswordHash(password)
 		if err != nil {
 			return
 		}
 		admin := domain.User{
 			Model:     gorm.Model{ID: 1, CreatedAt: time.Now(), UpdatedAt: time.Now()},
-			Firstname: "Zhooze",
-			Lastname:  "Admin",
-			Email:     "admin@zhooze.com",
+			Firstname: "Admin",
+			Lastname:  "Soxenly",
+			Email:     config.AdminEmail,
 			Password:  hashPassword,
-			Phone:     "+919061757507",
+			Phone:     "",
 			Blocked:   false,
 			Isadmin:   true,
 		}

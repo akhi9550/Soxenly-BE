@@ -259,3 +259,7 @@ func DeleteUser(id string) error {
 	}
 	return nil
 }
+
+func RevenueTrend(timeframe string) ([]models.GraphData, error) {
+	return repository.RevenueTrend(timeframe)
+}

@@ -324,3 +324,15 @@ func DeleteProductImage(c *gin.Context) {
 	success := response.ClientResponse(http.StatusOK, "Successfully deleted the image", nil, nil)
 	c.JSON(http.StatusOK, success)
 }
+
+func RevenueTrend(c *gin.Context) {
+	timeframe := c.DefaultQuery("timeframe", "daily")
+	trend, err := usecase.RevenueTrend(timeframe)
+	if err != nil {
+		errs := response.ClientResponse(http.StatusInternalServerError, "could not retrieve revenue trend", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errs)
+		return
+	}
+	success := response.ClientResponse(http.StatusOK, "Successfully retrieved revenue trend", trend, nil)
+	c.JSON(http.StatusOK, success)
+}

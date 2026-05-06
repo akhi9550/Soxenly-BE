@@ -78,8 +78,8 @@ func DeleteCategory(c *gin.Context) {
 	}
 	err = usecase.DeleteCategory(id)
 	if err != nil {
-		errorRes := response.ClientResponse(http.StatusBadRequest, "could not delete the specified category", nil, err.Error())
-		c.JSON(http.StatusInternalServerError, errorRes)
+		errorRes := response.ClientResponse(http.StatusBadRequest, err.Error(), nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
 		return
 	}
 	success := response.ClientResponse(http.StatusOK, "Successfully deleted the category", nil, nil)
