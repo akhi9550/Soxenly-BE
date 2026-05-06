@@ -25,6 +25,10 @@ func ConnectDatabase(confg config.Config) (*gorm.DB, error) {
 	db.AutoMigrate(&domain.Product{})
 	db.AutoMigrate(&domain.ProductVariant{})
 	db.AutoMigrate(&domain.Category{})
+	// Manual migration: Drop unique index on category if it exists
+	if db.Migrator().HasIndex(&domain.Category{}, "uni_categories_category") {
+		db.Migrator().DropIndex(&domain.Category{}, "uni_categories_category")
+	}
 	db.AutoMigrate(&domain.Address{})
 	db.AutoMigrate(&domain.Cart{})
 	db.AutoMigrate(&domain.Orders{})
