@@ -283,112 +283,145 @@ func PrintInvoice(orderId int) (*gofpdf.Fpdf, error) {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.AddPage()
 
-	// Brand Header
-	pdf.SetFont("Arial", "B", 36)
-	pdf.SetTextColor(0, 0, 0)
-	pdf.Text(10, 20, "ZHOOZE")
-	
-	// Company Info
-	pdf.SetY(25)
-	pdf.SetFont("Arial", "", 9)
-	pdf.SetTextColor(120, 120, 120)
-	pdf.Cell(0, 5, "123 Street, Urban Area, Kerala, India")
-	pdf.Ln(5)
-	pdf.Cell(0, 5, "Support: support@zhooze.com | +91 90000 00000")
-	pdf.Ln(15)
+	// Colors
+	brandGreenR, brandGreenG, brandGreenB := 27, 67, 50
+	textDarkR, textDarkG, textDarkB := 26, 26, 26
+	textLightR, textLightG, textLightB := 120, 120, 120
+	lineGrayR, lineGrayG, lineGrayB := 230, 230, 230
 
-	pdf.SetDrawColor(240, 240, 240)
-	pdf.Line(10, pdf.GetY(), 200, pdf.GetY())
+	// Brand Header
+	pdf.SetFont("Arial", "B", 32)
+	pdf.SetTextColor(brandGreenR, brandGreenG, brandGreenB)
+	pdf.Text(10, 25, "SOXENLY")
+	
+	// Invoice Label
+	pdf.SetFont("Arial", "B", 14)
+	pdf.SetTextColor(textLightR, textLightG, textLightB)
+	pdf.Text(150, 25, "TAX INVOICE")
+
+	// Company Info
+	pdf.SetY(32)
+	pdf.SetFont("Arial", "", 9)
+	pdf.SetTextColor(textLightR, textLightG, textLightB)
+	pdf.Cell(0, 5, "123 Soxenly Plaza, Urban Sector, Kerala, India")
+	pdf.Ln(5)
+	pdf.Cell(0, 5, "GSTIN: 32AAAAA0000A1Z5 | Support: hello@soxenly.com")
 	pdf.Ln(12)
+
+	pdf.SetDrawColor(lineGrayR, lineGrayG, lineGrayB)
+	pdf.Line(10, pdf.GetY(), 200, pdf.GetY())
+	pdf.Ln(10)
 
 	// Bill To & Order Info Grid
 	yBeforeGrid := pdf.GetY()
 
 	// Left Column: Bill To
-	pdf.SetFont("Arial", "B", 12)
-	pdf.SetTextColor(0, 0, 0)
-	pdf.Cell(95, 10, "BILL TO")
+	pdf.SetFont("Arial", "B", 10)
+	pdf.SetTextColor(brandGreenR, brandGreenG, brandGreenB)
+	pdf.Text(10, yBeforeGrid+5, "BILL TO")
+
+	pdf.SetFont("Arial", "", 10)
+	pdf.SetTextColor(textDarkR, textDarkG, textDarkB)
+	pdf.Text(10, yBeforeGrid+12, order.Firstname)
+	pdf.SetFont("Arial", "", 9)
+	pdf.SetTextColor(textLightR, textLightG, textLightB)
+	pdf.Text(10, yBeforeGrid+17, order.HouseName)
+	pdf.Text(10, yBeforeGrid+22, order.Street+", "+order.City)
+	pdf.Text(10, yBeforeGrid+27, order.State+" - "+order.Pin)
+	pdf.Text(10, yBeforeGrid+32, "Phone: "+order.Phone)
 
 	// Right Column: Order Info
-	pdf.Cell(95, 10, "ORDER INFORMATION")
-	pdf.Ln(10)
+	pdf.SetFont("Arial", "B", 10)
+	pdf.SetTextColor(brandGreenR, brandGreenG, brandGreenB)
+	pdf.Text(120, yBeforeGrid+5, "ORDER DETAILS")
 
-	pdf.SetFont("Arial", "", 10)
-	pdf.SetTextColor(50, 50, 50)
+	pdf.SetFont("Arial", "", 9)
+	pdf.SetTextColor(textDarkR, textDarkG, textDarkB)
+	pdf.Text(120, yBeforeGrid+12, "Order ID:")
+	pdf.SetFont("Arial", "B", 9)
+	pdf.Text(150, yBeforeGrid+12, "#"+order.OrderId)
 
-	// Bill To Details
-	pdf.Text(10, pdf.GetY(), order.Firstname)
-	pdf.Text(10, pdf.GetY()+5, order.HouseName)
-	pdf.Text(10, pdf.GetY()+10, order.Street+", "+order.City)
-	pdf.Text(10, pdf.GetY()+15, order.State+" - "+order.Pin)
+	pdf.SetFont("Arial", "", 9)
+	pdf.Text(120, yBeforeGrid+17, "Date:")
+	pdf.Text(150, yBeforeGrid+17, time.Now().Format("Jan 02, 2006"))
 
-	// Order Details
-	pdf.Text(105, pdf.GetY(), "Order ID: #"+order.OrderId)
-	pdf.Text(105, pdf.GetY()+5, "Status: "+order.PaymentStatus)
-	pdf.Text(105, pdf.GetY()+10, "Date: "+time.Now().Format("Jan 02, 2006"))
+	pdf.Text(120, yBeforeGrid+22, "Payment:")
+	pdf.Text(150, yBeforeGrid+22, order.PaymentStatus)
 
-	pdf.SetY(yBeforeGrid + 35)
-	pdf.Ln(10)
+	pdf.Text(120, yBeforeGrid+27, "Shipment:")
+	pdf.Text(150, yBeforeGrid+27, order.ShipmentStatus)
+
+	pdf.SetY(yBeforeGrid + 45)
 
 	// Table Header
-	pdf.SetFont("Arial", "B", 10)
-	pdf.SetFillColor(245, 245, 245)
-	pdf.SetTextColor(0, 0, 0)
-	pdf.CellFormat(80, 12, "  ITEM", "1", 0, "L", true, 0, "")
-	pdf.CellFormat(30, 12, "PRICE", "1", 0, "C", true, 0, "")
-	pdf.CellFormat(30, 12, "QTY", "1", 0, "C", true, 0, "")
-	pdf.CellFormat(50, 12, "TOTAL", "1", 0, "C", true, 0, "")
-	pdf.Ln(12)
+	pdf.SetFont("Arial", "B", 9)
+	pdf.SetFillColor(brandGreenR, brandGreenG, brandGreenB)
+	pdf.SetTextColor(255, 255, 255)
+	pdf.CellFormat(90, 10, "  PRODUCT DESCRIPTION", "0", 0, "L", true, 0, "")
+	pdf.CellFormat(30, 10, "UNIT PRICE", "0", 0, "C", true, 0, "")
+	pdf.CellFormat(20, 10, "QTY", "0", 0, "C", true, 0, "")
+	pdf.CellFormat(50, 10, "TOTAL", "0", 0, "C", true, 0, "")
+	pdf.Ln(10)
 
 	// Table Body
-	pdf.SetFont("Arial", "", 10)
-	pdf.SetTextColor(50, 50, 50)
-	for _, item := range items {
-		// Ensure name is not empty
+	pdf.SetFont("Arial", "", 9)
+	pdf.SetTextColor(textDarkR, textDarkG, textDarkB)
+	for i, item := range items {
+		// Alternate background color for rows
+		if i%2 == 0 {
+			pdf.SetFillColor(250, 250, 250)
+		} else {
+			pdf.SetFillColor(255, 255, 255)
+		}
+
 		name := item.ProductName
 		if name == "" {
 			name = "Product ID: " + strconv.Itoa(int(item.ProductID))
 		}
 
-		pdf.CellFormat(80, 10, "  "+name, "1", 0, "L", false, 0, "")
-		pdf.CellFormat(30, 10, "Rs. "+strconv.FormatFloat(item.TotalPrice/item.Quantity, 'f', 2, 64), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(30, 10, strconv.Itoa(int(item.Quantity)), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(50, 10, "Rs. "+strconv.FormatFloat(item.TotalPrice, 'f', 2, 64), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(90, 10, "  "+name, "0", 0, "L", true, 0, "")
+		pdf.CellFormat(30, 10, "INR "+strconv.FormatFloat(item.TotalPrice/item.Quantity, 'f', 2, 64), "0", 0, "C", true, 0, "")
+		pdf.CellFormat(20, 10, strconv.Itoa(int(item.Quantity)), "0", 0, "C", true, 0, "")
+		pdf.CellFormat(50, 10, "INR "+strconv.FormatFloat(item.TotalPrice, 'f', 2, 64), "0", 0, "C", true, 0, "")
 		pdf.Ln(10)
 	}
 
 	pdf.Ln(5)
 
 	// Summary Section
-	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(140, 10, "SUBTOTAL", "0", 0, "R", false, 0, "")
+	pdf.SetFont("Arial", "", 10)
+	pdf.SetTextColor(textLightR, textLightG, textLightB)
+	pdf.CellFormat(140, 8, "Subtotal", "0", 0, "R", false, 0, "")
 
 	var subTotal float64
 	for _, item := range items {
 		subTotal += item.TotalPrice
 	}
-	pdf.CellFormat(50, 10, "Rs. "+strconv.FormatFloat(subTotal, 'f', 2, 64), "0", 0, "C", false, 0, "")
+	pdf.SetTextColor(textDarkR, textDarkG, textDarkB)
+	pdf.CellFormat(50, 8, "INR "+strconv.FormatFloat(subTotal, 'f', 2, 64), "0", 0, "C", false, 0, "")
 	pdf.Ln(8)
 
-	pdf.CellFormat(140, 10, "OFFER APPLIED", "0", 0, "R", false, 0, "")
+	pdf.SetTextColor(textLightR, textLightG, textLightB)
+	pdf.CellFormat(140, 8, "Discount", "0", 0, "R", false, 0, "")
 	offerApplied := subTotal - order.FinalPrice
 	pdf.SetTextColor(200, 0, 0)
-	pdf.CellFormat(50, 10, "- Rs. "+strconv.FormatFloat(offerApplied, 'f', 2, 64), "0", 0, "C", false, 0, "")
-	pdf.Ln(10)
+	pdf.CellFormat(50, 8, "- INR "+strconv.FormatFloat(offerApplied, 'f', 2, 64), "0", 0, "C", false, 0, "")
+	pdf.Ln(12)
 
-	pdf.SetFont("Arial", "B", 12)
-	pdf.SetTextColor(0, 0, 0)
-	pdf.SetFillColor(245, 245, 245)
-	pdf.CellFormat(140, 12, "FINAL AMOUNT", "0", 0, "R", true, 0, "")
-	pdf.CellFormat(50, 12, "Rs. "+strconv.FormatFloat(order.FinalPrice, 'f', 2, 64), "0", 0, "C", true, 0, "")
-	pdf.Ln(25)
+	// Final Amount
+	pdf.SetFont("Arial", "B", 11)
+	pdf.SetFillColor(248, 249, 245)
+	pdf.SetTextColor(brandGreenR, brandGreenG, brandGreenB)
+	pdf.CellFormat(140, 12, "TOTAL AMOUNT PAYABLE", "0", 0, "R", true, 0, "")
+	pdf.CellFormat(50, 12, "INR "+strconv.FormatFloat(order.FinalPrice, 'f', 2, 64), "0", 0, "C", true, 0, "")
+	pdf.Ln(30)
 
 	// Footer
-	pdf.SetFont("Arial", "I", 9)
-	pdf.SetTextColor(150, 150, 150)
-	pdf.Cell(0, 5, "Thank you for shopping with ZHOOZE!")
+	pdf.SetFont("Arial", "I", 8)
+	pdf.SetTextColor(textLightR, textLightG, textLightB)
+	pdf.Cell(0, 5, "This is a computer generated invoice and does not require a physical signature.")
 	pdf.Ln(5)
-	pdf.Cell(0, 5, "This is a computer-generated invoice and does not require a signature.")
-
+	pdf.SetFont("Arial", "B", 8)
+	pdf.Cell(0, 5, "Thank you for choosing Soxenly - Walk with Nature.")
 	return pdf, nil
 }

@@ -1,11 +1,9 @@
 package handlers
 
 import (
-
 	"Zhooze/usecase"
 	"Zhooze/utils/models"
 	"Zhooze/utils/response"
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -281,44 +279,25 @@ func PrintInvoice(c *gin.Context) {
 	orderId := c.Query("order_id")
 	orderIdInt, err := strconv.Atoi(orderId)
 	if err != nil {
-		err = errors.New("error in coverting order id" + err.Error())
-		errRes := response.ClientResponse(http.StatusBadGateway, "error in reading the order id", nil, err)
+		errRes := response.ClientResponse(http.StatusBadRequest, "Invalid order ID", nil, err.Error())
 		c.JSON(http.StatusBadRequest, errRes)
 		return
 	}
+
 	pdf, err := usecase.PrintInvoice(orderIdInt)
-	fmt.Println("error ", err)
 	if err != nil {
-		errRes := response.ClientResponse(http.StatusBadGateway, "error in printing the invoice", nil, err.Error())
-		c.JSON(http.StatusBadRequest, errRes)
+		errRes := response.ClientResponse(http.StatusInternalServerError, "Failed to generate invoice", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errRes)
 		return
 	}
 
-	c.Header("Content-Disposition", "attachment;filename=invoice.pdf")
-
-	pdfFilePath := "salesReport/invoice.pdf"
-
-	err = pdf.OutputFileAndClose(pdfFilePath)
-	if err != nil {
-		errRes := response.ClientResponse(http.StatusBadGateway, "error in printing invoice2", nil, err)
-		c.JSON(http.StatusBadRequest, errRes)
-		return
-	}
-
-	c.Header("Content-Disposition", "attachment; filename=sales_report.pdf")
 	c.Header("Content-Type", "application/pdf")
-
-	c.File(pdfFilePath)
-
-	c.Header("Content-Type", "application/pdf")
+	c.Header("Content-Disposition", fmt.Sprintf("inline; filename=invoice_%d.pdf", orderIdInt))
 
 	err = pdf.Output(c.Writer)
 	if err != nil {
-		errRes := response.ClientResponse(http.StatusBadGateway, "error in printing invoice1", nil, err)
-		c.JSON(http.StatusBadRequest, errRes)
+		errRes := response.ClientResponse(http.StatusInternalServerError, "Failed to stream invoice", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errRes)
 		return
 	}
-
-	successRes := response.ClientResponse(http.StatusOK, "the request was successfull", pdf, nil)
-	c.JSON(http.StatusOK, successRes)
 }
