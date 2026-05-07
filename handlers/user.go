@@ -225,6 +225,12 @@ func UpdateUserDetails(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, errs)
 		return
 	}
+	err := validator.New().Struct(user)
+	if err != nil {
+		errs := response.ClientResponse(http.StatusBadRequest, "Constraints not satisfied", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errs)
+		return
+	}
 	updateDetails, err := usecase.UpdateUserDetails(user, user_id.(int))
 	if err != nil {
 		errs := response.ClientResponse(http.StatusInternalServerError, "failed update user", nil, err.Error())

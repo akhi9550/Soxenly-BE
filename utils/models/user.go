@@ -60,10 +60,10 @@ type AddressInfo struct {
 	Pin       string `json:"pin" validate:"required"`
 }
 type UsersProfileDetails struct {
-	Firstname    string `json:"firstname" `
-	Lastname     string `json:"lastname" `
-	Email        string `json:"email" `
-	Phone        string `json:"phone" `
+	Firstname    string `json:"firstname" validate:"gte=3"`
+	Lastname     string `json:"lastname" validate:"gte=1"`
+	Email        string `json:"email" validate:"email"`
+	Phone        string `json:"phone" validate:"e164"`
 	ReferralCode string `json:"referral_code"`
 }
 
