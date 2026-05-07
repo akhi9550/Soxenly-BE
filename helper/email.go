@@ -42,23 +42,18 @@ func SendEmail(to string, subject string, body string) error {
 }
 
 func SendWelcomeEmail(userEmail string, userName string) error {
+	fmt.Printf("Entered SendWelcomeEmail for: %s\n", userEmail)
 	subject := "Welcome to Soxenly!"
 	body := fmt.Sprintf(`
-		<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1B4332;">
-			<div style="text-align: center; margin-bottom: 30px;">
-				<h1 style="color: #1B4332; margin: 0;">SOXENLY</h1>
-				<p style="text-transform: uppercase; letter-spacing: 2px; font-size: 10px; color: #40916C;">Engineered Comfort. Conscious Choice.</p>
-			</div>
+		<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+			<h2 style="color: #1B4332;">Welcome to Soxenly!</h2>
 			<p>Hello %s,</p>
-			<p>Welcome to Soxenly! We're thrilled to have you join our movement toward sustainable, high-quality essentials.</p>
-			<p>At Soxenly, we believe that something as small as a pair of socks shouldn't leave a large footprint on our planet. That's why every decision we make—from materials to manufacturing—is centered around sustainability.</p>
-			<p>Explore our collections and discover comfort that's gentle on you and the Earth.</p>
-			<div style="text-align: center; margin: 40px 0;">
-				<a href="https://soxenly.vercel.app/shop" style="background-color: #1B4332; color: #D8F3DC; padding: 15px 30px; text-decoration: none; font-weight: bold; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Start Shopping</a>
+			<p>Thank you for joining Soxenly! We are excited to have you with us.</p>
+			<p>Explore our sustainable collection and enjoy premium comfort.</p>
+			<div style="margin-top: 30px;">
+				<a href="https://soxenly.vercel.app/" style="background-color: #1B4332; color: white; padding: 10px 20px; text-decoration: none;">Visit Store</a>
 			</div>
-			<p style="font-size: 12px; color: #1B4332; opacity: 0.6; margin-top: 50px; border-top: 1px solid #D8F3DC; pt-20">
-				© 2026 SOXENLY. All rights reserved.
-			</p>
+			<p style="margin-top: 40px; font-size: 10px; color: #888;">© 2026 Soxenly</p>
 		</div>
 	`, userName)
 

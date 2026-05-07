@@ -103,7 +103,13 @@ func UsersSignUp(user models.UserSignUp) (*models.TokenUser, error) {
 	}
 	// Send Welcome Email (asynchronous to not block the response)
 	go func() {
-		_ = helper.SendWelcomeEmail(userData.Email, userData.Firstname)
+		fmt.Printf("Starting Welcome Email goroutine for: %s\n", userData.Email)
+		err := helper.SendWelcomeEmail(userData.Email, userData.Firstname)
+		if err != nil {
+			fmt.Printf("Error in Welcome Email goroutine for %s: %v\n", userData.Email, err)
+		} else {
+			fmt.Printf("Welcome Email goroutine finished for: %s\n", userData.Email)
+		}
 	}()
 
 	return &models.TokenUser{
@@ -185,9 +191,16 @@ func GoogleLoginOrSignup(email, firstname, lastname string) (*models.TokenUser, 
 
 		// Send Welcome Email (asynchronous)
 		go func() {
-			_ = helper.SendWelcomeEmail(userData.Email, userData.Firstname)
+			fmt.Printf("Starting Google Welcome Email goroutine (SIGNUP) for: %s\n", userData.Email)
+			err := helper.SendWelcomeEmail(userData.Email, userData.Firstname)
+			if err != nil {
+				fmt.Printf("Error in Google Welcome Email goroutine for %s: %v\n", userData.Email, err)
+			} else {
+				fmt.Printf("Google Welcome Email goroutine finished for: %s\n", userData.Email)
+			}
 		}()
 	} else {
+		fmt.Printf("Google Login detected for: %s (No email will be sent)\n", email)
 		userdeatils, err := repository.FindUserByEmail(models.LoginDetail{Email: email})
 		if err != nil {
 			return &models.TokenUser{}, err
