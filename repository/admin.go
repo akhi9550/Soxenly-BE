@@ -227,6 +227,15 @@ func DeletePaymentMethod(id int) error {
 	}
 	return nil
 }
+func CheckUserOrdersExist(userID int) (bool, error) {
+	var count int
+	err := db.DB.Raw("SELECT COUNT(*) FROM orders WHERE user_id = ?", userID).Scan(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 func DeleteUser(id string) error {
 	user_id, err := strconv.Atoi(id)
 	if err != nil {

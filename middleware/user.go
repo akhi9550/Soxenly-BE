@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"Zhooze/helper"
+	"Zhooze/repository"
 	"Zhooze/utils/response"
 	"net/http"
 
@@ -28,6 +29,16 @@ func UserAuthMiddleware() gin.HandlerFunc {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
+
+		// Check if user is blocked
+		isBlocked, err := repository.IsUserBlocked(userID)
+		if err != nil || isBlocked {
+			response := response.ClientResponse(http.StatusUnauthorized, "User account is blocked", nil, "")
+			c.JSON(http.StatusUnauthorized, response)
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
 		c.Set("user_id", userID)
 		c.Set("user_email", userEmail)
 		c.Next()

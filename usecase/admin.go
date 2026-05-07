@@ -7,6 +7,7 @@ import (
 	"Zhooze/utils/models"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/jinzhu/copier"
@@ -253,7 +254,18 @@ func DeletePaymentMethod(id int) error {
 
 }
 func DeleteUser(id string) error {
-	err := repository.DeleteUser(id)
+	userID, err := strconv.Atoi(id)
+	if err != nil {
+		return err
+	}
+	orderExist, err := repository.CheckUserOrdersExist(userID)
+	if err != nil {
+		return err
+	}
+	if orderExist {
+		return errors.New("cannot delete user because they have existing orders")
+	}
+	err = repository.DeleteUser(id)
 	if err != nil {
 		return err
 	}

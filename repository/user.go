@@ -385,3 +385,12 @@ func NewWallect(userID int, amount float64) error {
 
 	return nil
 }
+
+func IsUserBlocked(userID int) (bool, error) {
+	var blocked bool
+	err := db.DB.Raw("SELECT blocked FROM users WHERE id = ?", userID).Scan(&blocked).Error
+	if err != nil {
+		return true, err
+	}
+	return blocked, nil
+}

@@ -182,6 +182,11 @@ func GoogleLoginOrSignup(email, firstname, lastname string) (*models.TokenUser, 
 		if err != nil {
 			return &models.TokenUser{}, err
 		}
+
+		// Send Welcome Email (asynchronous)
+		go func() {
+			_ = helper.SendWelcomeEmail(userData.Email, userData.Firstname)
+		}()
 	} else {
 		userdeatils, err := repository.FindUserByEmail(models.LoginDetail{Email: email})
 		if err != nil {
