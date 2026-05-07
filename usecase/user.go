@@ -101,6 +101,11 @@ func UsersSignUp(user models.UserSignUp) (*models.TokenUser, error) {
 	if err != nil {
 		return &models.TokenUser{}, errors.New("couldn't create refresh token due to error")
 	}
+	// Send Welcome Email (asynchronous to not block the response)
+	go func() {
+		_ = helper.SendWelcomeEmail(userData.Email, userData.Firstname)
+	}()
+
 	return &models.TokenUser{
 		Users:        userData,
 		AccessToken:  accessToken,

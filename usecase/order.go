@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"Zhooze/domain"
+	"Zhooze/helper"
 	"Zhooze/repository"
 	"Zhooze/utils/models"
 	"errors"
@@ -94,6 +95,15 @@ func OrderItemsFromCart(orderFromCart models.OrderFromCart, userID int) (domain.
 	if err != nil {
 		return domain.OrderSuccessResponse{}, err
 	}
+
+	// Send Order Confirmation Email (asynchronous)
+	go func() {
+		orderDetails, err := repository.GetDetailedOrderThroughId(order_id)
+		if err == nil {
+			_ = helper.SendOrderConfirmationEmail(orderDetails.Email, orderDetails.Firstname, order_id, FinalPrice)
+		}
+	}()
+
 	var orderItemDetails domain.OrderItem
 	for _, c := range cartItems {
 		orderItemDetails.ProductID = c.ProductID
@@ -293,7 +303,7 @@ func PrintInvoice(orderId int) (*gofpdf.Fpdf, error) {
 	pdf.SetFont("Arial", "B", 32)
 	pdf.SetTextColor(brandGreenR, brandGreenG, brandGreenB)
 	pdf.Text(10, 25, "SOXENLY")
-	
+
 	// Invoice Label
 	pdf.SetFont("Arial", "B", 14)
 	pdf.SetTextColor(textLightR, textLightG, textLightB)
