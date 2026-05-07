@@ -47,14 +47,21 @@ func ConnectDatabase(confg config.Config) (*gorm.DB, error) {
 }
 
 func SeedPaymentMethods(db *gorm.DB) {
-	methods := []string{"Razorpay"}
-	for i, name := range methods {
+	methods := []struct {
+		ID   uint
+		Name string
+	}{
+		{ID: 1, Name: "COD"},
+		{ID: 2, Name: "Razorpay"},
+		{ID: 3, Name: "Wallet"},
+	}
+	for _, m := range methods {
 		var count int64
-		db.Model(&domain.PaymentMethod{}).Where("payment_name = ?", name).Count(&count)
+		db.Model(&domain.PaymentMethod{}).Where("payment_name = ?", m.Name).Count(&count)
 		if count == 0 {
 			db.Create(&domain.PaymentMethod{
-				Model:        gorm.Model{ID: uint(i + 1)},
-				Payment_Name: name,
+				Model:        gorm.Model{ID: m.ID},
+				Payment_Name: m.Name,
 			})
 		}
 	}

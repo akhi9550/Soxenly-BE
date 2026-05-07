@@ -250,7 +250,7 @@ func CheckOut(c *gin.Context) {
 // @Success		200	{object}	response.Response{}
 // @Failure		500	{object}	response.Response{}
 // @Router			/user/order/place-order     [GET]
-func PlaceOrderCOD(c *gin.Context) {
+func InitiateRazorpayPayment(c *gin.Context) {
 	order_id, err := strconv.Atoi(c.Query("order_id"))
 	if err != nil {
 		errs := response.ClientResponse(http.StatusInternalServerError, "error from orderID", nil, err.Error())

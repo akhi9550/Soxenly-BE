@@ -211,6 +211,14 @@ func PaymentMethodID(order_id int) (int, error) {
 	return id, nil
 }
 
+func GetPaymentMethodName(orderID int) (string, error) {
+	name, err := repository.GetPaymentMethodName(orderID)
+	if err != nil {
+		return "", err
+	}
+	return name, nil
+}
+
 func ExecutePurchaseCOD(orderID int) error {
 	err := repository.OrderExist(orderID)
 	if err != nil {

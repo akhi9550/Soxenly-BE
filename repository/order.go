@@ -157,6 +157,15 @@ func PaymentMethodID(orderID int) (int, error) {
 	return a, nil
 }
 
+func GetPaymentMethodName(orderID int) (string, error) {
+	var name string
+	err := db.DB.Raw("SELECT pm.payment_name FROM orders o JOIN payment_methods pm ON o.payment_method_id = pm.id WHERE o.id = ?", orderID).Scan(&name).Error
+	if err != nil {
+		return "", err
+	}
+	return name, nil
+}
+
 func GetProductDetailsFromOrders(orderID int) ([]models.OrderProducts, error) {
 	var OrderProductDetails []models.OrderProducts
 	if err := db.DB.Raw("SELECT product_id,quantity as stock,size FROM order_items WHERE order_id = ?", orderID).Scan(&OrderProductDetails).Error; err != nil {

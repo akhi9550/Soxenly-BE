@@ -18,13 +18,13 @@ func MakePaymentRazorPay(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, errs)
 		return
 	}
-	paymentMethodID, err := usecase.PaymentMethodID(orderID)
+	paymentMethodName, err := usecase.GetPaymentMethodName(orderID)
 	if err != nil {
-		err := response.ClientResponse(http.StatusInternalServerError, "error from paymentId ", nil, err.Error())
+		err := response.ClientResponse(http.StatusInternalServerError, "error from payment method name", nil, err.Error())
 		c.JSON(http.StatusInternalServerError, err)
 		return
 	}
-	if paymentMethodID == 2 {
+	if paymentMethodName == "Razorpay" {
 		payment, _ := usecase.PaymentAlreadyPaid(orderID)
 		if payment {
 			c.HTML(http.StatusOK, "pay.html", nil)

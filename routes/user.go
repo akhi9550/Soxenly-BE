@@ -72,7 +72,7 @@ func UserRoutes(r *gin.RouterGroup, db *gorm.DB) *gin.RouterGroup {
 		{
 			order.GET("", handlers.GetOrderDetails)
 			order.PUT("", handlers.CancelOrder)
-			order.GET("/place-order", handlers.PlaceOrderCOD)
+			order.GET("/place-order", handlers.InitiateRazorpayPayment)
 
 		}
 		checkout := r.Group("/checkout")
